@@ -55,9 +55,6 @@ export class OpenPositionsSheet {
             let wOriginalCredit: number = Number(row[OpenPositionsColumn.OriginalCredit - 1]);
             wPosition.originalCredit = wOriginalCredit;
 
-            let wBiggestDeltaOpen: number = Number(row[OpenPositionsColumn.BiggestDeltaOpen - 1]);
-            wPosition.readInBiggestDeltaOpen = wBiggestDeltaOpen;
-
             let wNetLiq : number = Number(row[OpenPositionsColumn.NetLiq-1]);
             wPosition.readInPositionNetLiq = wNetLiq;
 
@@ -67,7 +64,7 @@ export class OpenPositionsSheet {
 
             let contractCodes : string = `${row[OpenPositionsColumn.ContractCodes -1]}`;
 
-            if (JLog.isDebug()) JLog.debug(`Read following data from sheet values: originalDTE->${wOriginalDTE}, originalCredit->${wOriginalCredit}, startingBiggestDelta->${wBiggestDeltaOpen}, contractCodes->${contractCodes}`);
+            if (JLog.isDebug()) JLog.debug(`Read following data from sheet values: originalDTE->${wOriginalDTE}, originalCredit->${wOriginalCredit}, contractCodes->${contractCodes}`);
             wPosition.setOptionsWithContractCodes(contractCodes);
           
 
@@ -86,8 +83,7 @@ export class OpenPositionsSheet {
             wPosition.newPosition = false;
             JLog.debug(`Loaded the following info into the position 
                         OriginalDTE: ${wOriginalDTE}
-                        OriginalCredit: ${wOriginalCredit}
-                        StartingBiggestDelta: ${wBiggestDeltaOpen}`);
+                        OriginalCredit: ${wOriginalCredit}`);
 
 
             portfolio.setPosition(wPosition.symbol, wPosition);
@@ -169,7 +165,6 @@ export class OpenPositionsSheet {
                 else { //If we are setting this to closed, there is no need to fill in the rest of the data because
                     //it will just mess up the history.
                     if (JLog.isDebug()) JLog.debug(`OpenPositionsSheet.write(): ${wPosition.symbol} did not return CLOSED.`)
-                    sheet.getRange(rowIndex, OpenPositionsColumn.BiggestDelta).setValue(wPosition.getBiggestDelta());
                     sheet.getRange(rowIndex, OpenPositionsColumn.DTE).setValue(wPosition.getDTE());
                     sheet.getRange(rowIndex, OpenPositionsColumn.Quantity).setValue(wPosition.getQuantity());
                     sheet.getRange(rowIndex, OpenPositionsColumn.ContractCodes).setValue(wPosition.getContractCodes());
@@ -219,18 +214,13 @@ export class OpenPositionsSheet {
                     sheet.getRange(lastRow, OpenPositionsColumn.ProfitLoss).setFormula("=E" + lastRow + "+F" + lastRow);
                     sheet.getRange(lastRow, OpenPositionsColumn.ProfitLossPercent).setFontWeight("bold").setNumberFormat("#.##%");
                     sheet.getRange(lastRow, OpenPositionsColumn.ProfitLossPercent).setFormula(`=if(D${lastRow} > 0, G${lastRow}/D${lastRow}, (G${lastRow}/D${lastRow}) * -1)`);
-                    sheet.getRange(lastRow, OpenPositionsColumn.BiggestDelta).setValue(position.getBiggestDelta());
                     sheet.getRange(lastRow, OpenPositionsColumn.Quantity).setValue(position.getQuantity());
                     sheet.getRange(lastRow, OpenPositionsColumn.TargetNetLiq).setFormula("=((D" + lastRow + "/2)-E" + lastRow + ")*-1");
-                    sheet.getRange(lastRow, OpenPositionsColumn.TargetMarketPrice).setFormula("=O" + lastRow + "/P" + lastRow);
                     sheet.getRange(lastRow, OpenPositionsColumn.OpenDate).setValue(Utilities.formatDate(new Date(), "CST", "MM/dd/yyyy"));
                     sheet.getRange(lastRow, OpenPositionsColumn.DaysInTrade).setFormula("=DATEDIF(R" + lastRow + ",TODAY(),\"D\")");
                     sheet.getRange(lastRow, OpenPositionsColumn.OriginalDTE).setValue(position.originalDTE);
-                    sheet.getRange(lastRow, OpenPositionsColumn.BiggestDeltaOpen).setValue(position.getBiggestDelta());
                     sheet.getRange(lastRow, OpenPositionsColumn.ContractCodes).setValue(position.getContractCodes());
-                    sheet.getRange(lastRow, OpenPositionsColumn.DailyProfitReached).setFormula("=AND(Z" + lastRow + " > Y"+lastRow+", H"+lastRow+" > 0.25)");
-                    sheet.getRange(lastRow, OpenPositionsColumn.ExpectedDailyProfit).setFormula("=D" + lastRow + " / T"+lastRow);
-                    sheet.getRange(lastRow, OpenPositionsColumn.CurrentDailyProfit).setFormula("=G" + lastRow + " / S"+lastRow);
+                    
                     
                     JLog.debug(`Inserted the position ${position.symbol} at the end of the OpenPositions spreadsheet`);
                 }
@@ -262,12 +252,12 @@ export class OpenPositionsSheet {
             if (JLog.isDebug()) JLog.debug(`OpenPositonsShet.write(): The ${row[OpenPositionsColumn.Symbol - 1]} tmpStatus when looking for closed was ${tmpStatus}`)
             if (`${tmpStatus}` === "Closed") {
                 // HERE IS THE CODE TO MOVE THIS TO THE CLOSED SHEET.
-                JLog.info(`The position for ${row[OpenPositionsColumn.Symbol - 1]} is Closeed and will be moved`);
+                JLog.info(`The position for ${row[OpenPositionsColumn.Symbol - 1]} is Closed and will be moved`);
                 var targetRange = closedSheet.getRange(closedSheet.getLastRow() + 1, 1);
                 sheet.getRange(sheet.getRange(cIndex, OpenPositionsColumn.Status).getRow(), 1, 1, sheet.getLastColumn()).moveTo(targetRange);
                 var closedDateRange = closedSheet.getRange(targetRange.getRow(), OpenPositionsColumn.ClosedDate);
                 closedDateRange.setValue(Utilities.formatDate(new Date(), "CST", "MM/dd/yyyy"));
-                closedSheet.getRange(targetRange.getRow(), OpenPositionsColumn.DaysInTrade).setFormula("=DATEDIF(R" + targetRange.getRow() + ",W" + targetRange.getRow() + ",\"D\")");
+                closedSheet.getRange(targetRange.getRow(), OpenPositionsColumn.DaysInTrade).setFormula("=DATEDIF(R" + targetRange.getRow() + ",U" + targetRange.getRow() + ",\"D\")");
 
                 sheet.deleteRow(cIndex);
                 //Remove the position from the portfolio so we don't get alerts on it
@@ -295,7 +285,7 @@ export class OpenPositionsSheet {
         else {
             if (sheet.getLastRow() > 1) {
                 if (JLog.isDebug()) JLog.debug("Going to get the range FOR Closed search");
-                range = sheet.getRange(2, 1, sheet.getLastRow() - 1, OpenPositionsColumn.BiggestDeltaOpen);
+                range = sheet.getRange(2, 1, sheet.getLastRow() - 1, OpenPositionsColumn.OriginalDTE);
                 values = range.getValues();
                 this.cachedValuesForHighlight = values;
             }
@@ -311,10 +301,7 @@ export class OpenPositionsSheet {
             let tmpSymbol = row[OpenPositionsColumn.Symbol-1];
             if (`${tmpSymbol}` === symbol) {
                 let tmpField : GoogleAppsScript.Spreadsheet.Range;
-                if (alertType === AlertType.BiggestDelta) {
-                    tmpField = sheet.getRange(i, OpenPositionsColumn.BiggestDelta);
-                }
-                else if (alertType === AlertType.DaysTillExpiration) {
+                if (alertType === AlertType.DaysTillExpiration) {
                     tmpField = sheet.getRange(i, OpenPositionsColumn.DTE);
                 }
                 else if (alertType === AlertType.MaxGain) {
@@ -375,9 +362,9 @@ export class OpenPositionsSheet {
         sheet.getRange(1, OpenPositionsColumn.OriginalCredit).setValue("Original Credit");
         sheet.getRange(1, OpenPositionsColumn.CostBasis).setValue("Total Cost Basis");
         sheet.getRange(1, OpenPositionsColumn.NetLiq).setFontWeight("bold").setValue("Open Net Liq");
+        sheet.getRange(1, OpenPositionsColumn.NetLiq).setValue("Fees");
         sheet.getRange(1, OpenPositionsColumn.ProfitLoss).setValue("Position P/L");
         sheet.getRange(1, OpenPositionsColumn.ProfitLossPercent).setFontWeight("bold").setValue("Position P/L Percent");
-        sheet.getRange(1, OpenPositionsColumn.BiggestDelta).setValue("Biggest Delta");
         sheet.getRange(1, OpenPositionsColumn.Adjustment1).setValue("1st Adj Credit");
         sheet.getRange(1, OpenPositionsColumn.Adjustment2).setValue("2nd Adj Credit");
         sheet.getRange(1, OpenPositionsColumn.Adjustment3).setValue("3rd Adj Credit");
@@ -386,15 +373,11 @@ export class OpenPositionsSheet {
         sheet.getRange(1, OpenPositionsColumn.TargetNetLiq).setValue("Target Net Liq");
         sheet.getRange(1, OpenPositionsColumn.Quantity).setValue("Quantity");
         sheet.getRange(1, OpenPositionsColumn.TargetMarketPrice).setValue("Target Market Price");
-
         sheet.getRange(1, OpenPositionsColumn.OpenDate).setValue("Position Open Date");
         sheet.getRange(1, OpenPositionsColumn.DaysInTrade).setValue("Days In Trade");
         sheet.getRange(1, OpenPositionsColumn.OriginalDTE).setValue("Starting DTE");
-        sheet.getRange(1, OpenPositionsColumn.BiggestDeltaOpen).setValue("Biggest Delta On Open");
         sheet.getRange(1, OpenPositionsColumn.ContractCodes).setValue("Contract Codes");
-        sheet.getRange(1, OpenPositionsColumn.DailyProfitReached).setValue("DPR");
-        sheet.getRange(1, OpenPositionsColumn.ExpectedDailyProfit).setValue("Expected Daily Profit");
-        sheet.getRange(1, OpenPositionsColumn.CurrentDailyProfit).setValue("Current Daily Profit");
+        sheet.getRange(1, OpenPositionsColumn.ContractCodes).setValue("Strategy");
     }
 
 }
@@ -406,9 +389,9 @@ export enum OpenPositionsColumn {
     OriginalCredit = 4,
     CostBasis = 5,
     NetLiq = 6,
-    ProfitLoss = 7,
-    ProfitLossPercent = 8,
-    BiggestDelta = 9,
+    Fees = 7,
+    ProfitLoss = 8,
+    ProfitLossPercent = 9,
     Adjustment1 = 10,
     Adjustment2 = 11,
     Adjustment3 = 12,
@@ -420,12 +403,9 @@ export enum OpenPositionsColumn {
     OpenDate = 18,
     DaysInTrade = 19,
     OriginalDTE = 20,
-    BiggestDeltaOpen = 21,
-    ContractCodes = 22,
-    ClosedDate = 23,
-    DailyProfitReached = 24,
-    ExpectedDailyProfit = 25,
-    CurrentDailyProfit = 26
+    ContractCodes = 21,
+    ClosedDate = 22,
+    Strategy = 23
 }
 
 export enum HighlightType {

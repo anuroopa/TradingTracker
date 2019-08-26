@@ -126,14 +126,14 @@ function testEngineConfigSheet(passed: string[], failed: string[]) {
 
 function testOpenPositionSheetValues(passed: string[], failed: string[]) {
     let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Open Positions");
-    let delta: number = Number(sheet.getRange(12, OpenPositionsColumn.BiggestDelta).getValue());
+    /* let delta: number = Number(sheet.getRange(12, OpenPositionsColumn.BiggestDelta).getValue());
 
     if (delta === 16) {
         passed.push(`Incorrect delta on open sheet ${delta}`);
     }
     else {
         failed.push(`Incorrect biggest delta on open sheet ${delta}`);
-    }
+    } */
 
     Portfolio.clean();
     let tPortfolio: Portfolio = Portfolio.instance();
