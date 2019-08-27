@@ -1,6 +1,6 @@
-rd /s /q ..\FireByArthurTradingEngineV3\src
-mkdir ..\FireByArthurTradingEngineV3\src
-xcopy src ..\FireByArthurTradingEngineV3\src /E
-cd ../FireByArthurTradingEngineV3
+rd /s /q .\deployment\src
+mkdir .\deployment\src
+xcopy src .\deployment\src /E
+cd ./deployment
 clasp push
-cd ../FireByArthurTradingEngine
+cd ../TradingEngine
