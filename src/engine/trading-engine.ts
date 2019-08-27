@@ -90,10 +90,6 @@ export class TradingEngine {
             this.alertConfigs.push(tAlertConfig);
         }
 
-        if (engineConfig.getConfig(EngineConfigProperty.JArthurRulesEnabled) === "1") {
-            tAlertConfig = new AlertConfig(AlertType.JArthurRules, Number("1"));
-            this.alertConfigs.push(tAlertConfig);
-        }
     }
 
     processAlerts(portfolio: Portfolio): TradeAlert[] {
@@ -373,7 +369,7 @@ export class TradingEngine {
 
                 }
 
-                else if (alertConfig.alertType === AlertType.JArthurRules) {
+                else if (alertConfig.alertType === AlertType.TrackerRules) {
                     if (alertConfig.alertValue === 0) continue; //get outa here
                     //vars needed
                     let adjustmentsMade = 0;
@@ -384,57 +380,57 @@ export class TradingEngine {
                     if ((adjustmentsMade === 1) && (position.getPositionPLPercent() >= 25)) {
                         if (JLog.isDebug()) JLog.debug(`Position had one adjustment and is over 25% profit! ${position.symbol}`);
                         let alertedState: string = engineState.getStateByStr(
-                            `${position.symbol}-${AlertType[AlertType.JArthurRules]}`);
+                            `${position.symbol}-${AlertType[AlertType.TrackerRules]}`);
                         //Highligh function
                         if (this.highlightFunction != null) {
-                            if (JLog.isDebug()) JLog.debug(`Position had JArthurRules met ${position.symbol}, so setting to GREEN`);
+                            if (JLog.isDebug()) JLog.debug(`Position had TrackerRules met ${position.symbol}, so setting to GREEN`);
                             if (this.highlightFunction != null) {
                                 let newNote = null;
                                 if (alertedState !== "Done") newNote = new Date()+": 25% profit met with one adjustment";
-                                this.highlightFunction(position.symbol, AlertType.JArthurRules, HighlightType.GREEN, newNote);
+                                this.highlightFunction(position.symbol, AlertType.TrackerRules, HighlightType.GREEN, newNote);
                                 plAlreadyHighlighted = true;
                             }
                         }
 
                         if (alertedState === "Done") continue;
-                        if (JLog.isDebug()) JLog.debug(`Creating JArthurRules alert for ${position.symbol}`);
+                        if (JLog.isDebug()) JLog.debug(`Creating TrackerRules alert for ${position.symbol}`);
                         let alert = new TradeAlert();
                         alert.alertType = alertConfig.alertType;
                         alert.alertSymbol = position.symbol;
                         alert.alertMessage = `${position.symbol} Alert! Position had one adjustment and profit is at $${position.getPositionPLPercent()}`;
                         tradeAlerts.push(alert);
                         engineState.setStateByStr(
-                            `${position.symbol}-${AlertType[AlertType.JArthurRules]}`,
+                            `${position.symbol}-${AlertType[AlertType.TrackerRules]}`,
                             "Done");
                     }
                     else if (adjustmentsMade > 1 && position.getPositionPLPercent() >= 0 ) {
                         let alertedState: string = engineState.getStateByStr(
-                            `${position.symbol}-${AlertType[AlertType.JArthurRules]}`);
+                            `${position.symbol}-${AlertType[AlertType.TrackerRules]}`);
                         //Highligh function
                         if (this.highlightFunction != null) {
-                            if (JLog.isDebug()) JLog.debug(`Position had JARthurRules met ${position.symbol}, so setting to GREEN`);
+                            if (JLog.isDebug()) JLog.debug(`Position had TrackerRules met ${position.symbol}, so setting to GREEN`);
                             let newNote = null;
                             if (alertedState !== "Done") newNote = new Date()+": Above 0 profit with multiple adjustments";
-                                this.highlightFunction(position.symbol, AlertType.JArthurRules, HighlightType.GREEN, newNote);
+                                this.highlightFunction(position.symbol, AlertType.TrackerRules, HighlightType.GREEN, newNote);
                                 plAlreadyHighlighted = true;
                         }
 
                         if (alertedState === "Done") continue;
-                        if (JLog.isDebug()) JLog.debug(`Creating JArthurRules alert for ${position.symbol}`);
+                        if (JLog.isDebug()) JLog.debug(`Creating TrackerRules alert for ${position.symbol}`);
                         let alert = new TradeAlert();
                         alert.alertType = alertConfig.alertType;
                         alert.alertSymbol = position.symbol;
                         alert.alertMessage = `${position.symbol} Alert! Position had multiple adjustments and profit is above 0 at $${position.getPositionPLPercent()}`;
                         tradeAlerts.push(alert);
                         engineState.setStateByStr(
-                            `${position.symbol}-${AlertType[AlertType.JArthurRules]}`,
+                            `${position.symbol}-${AlertType[AlertType.TrackerRules]}`,
                             "Done");
                     }
                     else {
                         //Highligh function
                         if (plAlreadyHighlighted === false && this.highlightFunction != null) {
-                            if (JLog.isDebug()) JLog.debug(`JArthurRulres didn't hit alert for ${position.symbol}, so setting to normal`);
-                            this.highlightFunction(position.symbol, AlertType.JArthurRules, HighlightType.NORMAL, null);
+                            if (JLog.isDebug()) JLog.debug(`Rules didn't hit alert for ${position.symbol}, so setting to normal`);
+                            this.highlightFunction(position.symbol, AlertType.TrackerRules, HighlightType.NORMAL, null);
                         }
                     }
 

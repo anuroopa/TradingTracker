@@ -1,14 +1,11 @@
-# The Fire By Arthur Trading Engine
-This is designed as a Google Sheets add on for options traders that provides sophisticated portfolio alerts, portfolio statistics, and Apple Watch face integration.
+This is designed as a Google Sheets add on for options traders that provides sophisticated portfolio alerts, and portfolio statistics.
 
 It is written in Typescript to allow for an object oriented structure, and depends on "clasp" for deploying the app to Google Apps.
 
-The official site for this project is on [FireByArthur.com](https://firebyarthur.com/fire-by-arthur-trading-engine/)
 
-## Getting the FireByArthurTradingEngine up and running.
 
 - Install Node.js and Visual Studio Code
-- Clone the FireByArthurTradingEngine repository to a directory on your computer 
+- Clone the repository to a directory on your computer 
 - Install typescript module: npm install typescript --save
 - Install ts-node (for running the unit tests locally): npm install ts-node --save
 - Install google app script types: npm install @types/google-apps-script --save
@@ -20,7 +17,7 @@ The official site for this project is on [FireByArthur.com](https://firebyarthur
 
 - Install clasp globally: npm install @google/clasp -g
 - It is recommended to first create a GoogleSheet and open the attached script by going to Tools | Script Editor
-- At this point, you should create a separate local directory that is used for staging a deployingment to your Google Sheet. If you look at the googledeploy.cmd for an example of kicking off a deployment, you see how that directory can be named FireByArthurTradingEngineV3.
+- At this point, you should create a separate local directory that is used for staging a deployingment to your Google Sheet. If you look at the googledeploy.cmd for an example of kicking off a deployment, you see how that directory can be named.
 - Now, in the Google Sheet script editor, you can get the project ID of the script by going to File | Project Properties.
 - Once you have that ID, you can clone the Google Script to your local deployment directory by changing to that directory and executing this command: clasp clone <Project ID>
 - The Code.gs file will appear in that directory and now a deployment can be created by copying over the src directory (see googledeploy.cmd script for an example), and modifying the Code.gs.
@@ -33,7 +30,7 @@ The official site for this project is on [FireByArthur.com](https://firebyarthur
     
 ```javascript
    function runEngine() {
-    FBATERun();
+    TrackerRun();
 }
 ```
 
@@ -55,11 +52,11 @@ so it will only import when there is new data to be imported.
 
 ```javascript
   function onOpen() {
-    FBATEOnOpen();  
+    TrackerOnOpen();  
 }
 
 function runEngine() {
-    FBATERun();
+    TrackerRun();
 }
 
 

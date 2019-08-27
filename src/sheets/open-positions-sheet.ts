@@ -317,9 +317,6 @@ export class OpenPositionsSheet {
                 else if (alertType == AlertType.StrikeBreached) {
                     tmpField = sheet.getRange(i, OpenPositionsColumn.Symbol);
                 }
-                else if (alertType == AlertType.JArthurRules) {
-                    tmpField = sheet.getRange(i, OpenPositionsColumn.ProfitLossPercent);
-                }
 
                 if (highlight === HighlightType.PINK) {
                     tmpField.setBackground("pink");

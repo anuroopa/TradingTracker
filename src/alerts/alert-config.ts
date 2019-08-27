@@ -19,5 +19,5 @@ export enum AlertType {
     DaysTillExpiration,
     StrikeBreached,
     DailyReturnMet,
-    JArthurRules
+    TrackerRules
 }

@@ -193,7 +193,7 @@ export function showSidebar() {
 
 function getTDAService() {
   let tdaClientId = EngineConfig.instance().getConfig(EngineConfigProperty.TDAmeritradeAPIClientId);
-  let tdaClientSecret = "firebyarthurtradingengine";
+  let tdaClientSecret = "placeholder";
   // Create a new service with the given name. The name will be used when
   // persisting the authorized token, so ensure it is unique within the
   // scope of the property store.

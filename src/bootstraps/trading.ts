@@ -20,21 +20,21 @@ import { TDAmeritradeHub } from '../brokerage/tdameritrade/tdameritrade-hub';
 import { TradeFinderData } from '../market/trade-finder-data';
 import { OptionsPosition } from '../portfolio/optionsposition';
 
-export function FBATEOnOpen() {
+export function TrackerOnOpen() {
     var ui = SpreadsheetApp.getUi();
-    ui.createMenu('Fire By Arthur Trading Engine')
-      .addItem('Run','FBATERun')
-      .addItem('Load CSV','FBATELoadCSVData')
-      .addItem('Run Trade Finder','FBATERunTradeFinder')
+    ui.createMenu('Trade Tracker')
+      .addItem('Run','TrackerRun')
+      .addItem('Load CSV','TrackerLoadCSVData')
+      .addItem('Run Trade Finder','TrackerRunTradeFinder')
       .addToUi();
 }
 
 
-export function FBATERun() {
+export function TrackerRun() {
 
       //setting it for Google Apps logging
     JLog.setLoggingMethod((text) => {console.log(text)});
-    JLog.info("Starting the J. Arthur Trading Engine.");
+    JLog.info("Starting the Trade Tracker.");
     
 
     //All geared around the task manager. If there are no tasks,
@@ -104,7 +104,7 @@ export function FBATERun() {
 
 }
 
-export function FBATERunTradeFinder() {
+export function TrackerRunTradeFinder() {
     let engineConfigSheet : EngineConfigSheet = new EngineConfigSheet();
     let engineConfig : EngineConfig = EngineConfig.instance();
     engineConfigSheet.read(engineConfig);
@@ -163,7 +163,7 @@ export function runCIProcess() {
     MailApp.sendEmail(EngineConfig.instance().getConfig(EngineConfigProperty.NotificationEmails),subject , msgString);
 }
 
-export function FBATELoadCSVData() {
+export function TrackerLoadCSVData() {
 
     let engineConfigSheet : EngineConfigSheet = new EngineConfigSheet();
     let engineConfig : EngineConfig = EngineConfig.instance();
@@ -191,7 +191,7 @@ export function FBATELoadCSVData() {
 export function tdAmeritradeLogin() {
        //setting it for Google Apps logging
     JLog.setLoggingMethod((text) => {console.log(text)});
-    JLog.info("Starting the J. Arthur Trading Engine.");
+    JLog.info("Starting the Trade Tracker.");
     let engineConfigSheet : EngineConfigSheet = new EngineConfigSheet();
     let engineConfig : EngineConfig = EngineConfig.instance();
     engineConfigSheet.read(engineConfig);
@@ -217,7 +217,7 @@ export function testTDAGetTradeFinderData() {
 export function tdaCallback(request) {
        //setting it for Google Apps logging
     JLog.setLoggingMethod((text) => {console.log(text)});
-    JLog.info("Starting the J. Arthur Trading Engine for tdaCallback.");
+    JLog.info("Starting the Trade Tracker for tdaCallback.");
     let engineConfigSheet : EngineConfigSheet = new EngineConfigSheet();
     let engineConfig : EngineConfig = EngineConfig.instance();
     engineConfigSheet.read(engineConfig);
