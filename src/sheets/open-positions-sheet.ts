@@ -211,9 +211,10 @@ export class OpenPositionsSheet {
                     sheet.getRange(lastRow, OpenPositionsColumn.OriginalCredit).setValue(position.originalCredit);
                     sheet.getRange(lastRow, OpenPositionsColumn.CostBasis).setFormula("=D" + lastRow + "+J" + lastRow + "+K" + lastRow + "+L" + lastRow + "+M" + lastRow + "+N" + lastRow);
                     sheet.getRange(lastRow, OpenPositionsColumn.NetLiq).setFontWeight("bold").setValue(position.getOpenNetLiq());
+                    sheet.getRange(lastRow, OpenPositionsColumn.Fees).setValue("");
                     sheet.getRange(lastRow, OpenPositionsColumn.ProfitLoss).setFormula("=E" + lastRow + "+F" + lastRow);
                     sheet.getRange(lastRow, OpenPositionsColumn.ProfitLossPercent).setFontWeight("bold").setNumberFormat("#.##%");
-                    sheet.getRange(lastRow, OpenPositionsColumn.ProfitLossPercent).setFormula(`=if(D${lastRow} > 0, G${lastRow}/D${lastRow}, (G${lastRow}/D${lastRow}) * -1)`);
+                    sheet.getRange(lastRow, OpenPositionsColumn.ProfitLossPercent).setFormula(`=if(D${lastRow} > 0, H${lastRow}/D${lastRow}, (H${lastRow}/D${lastRow}) * -1)`);
                     sheet.getRange(lastRow, OpenPositionsColumn.Quantity).setValue(position.getQuantity());
                     sheet.getRange(lastRow, OpenPositionsColumn.TargetNetLiq).setFormula("=((D" + lastRow + "/2)-E" + lastRow + ")*-1");
                     sheet.getRange(lastRow, OpenPositionsColumn.OpenDate).setValue(Utilities.formatDate(new Date(), "CST", "MM/dd/yyyy"));
@@ -359,7 +360,7 @@ export class OpenPositionsSheet {
         sheet.getRange(1, OpenPositionsColumn.OriginalCredit).setValue("Original Credit");
         sheet.getRange(1, OpenPositionsColumn.CostBasis).setValue("Total Cost Basis");
         sheet.getRange(1, OpenPositionsColumn.NetLiq).setFontWeight("bold").setValue("Open Net Liq");
-        sheet.getRange(1, OpenPositionsColumn.NetLiq).setValue("Fees");
+        sheet.getRange(1, OpenPositionsColumn.Fees).setValue("Fees");
         sheet.getRange(1, OpenPositionsColumn.ProfitLoss).setValue("Position P/L");
         sheet.getRange(1, OpenPositionsColumn.ProfitLossPercent).setFontWeight("bold").setValue("Position P/L Percent");
         sheet.getRange(1, OpenPositionsColumn.Adjustment1).setValue("1st Adj Credit");
