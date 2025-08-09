@@ -1,7 +1,8 @@
 node_modules/
-deployment/
+deploy/
 .clasp.json
 appsscript.json
 .claspignore
 sarairadeploy.cmd
 jiradeploy.cmd
+.env
