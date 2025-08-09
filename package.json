@@ -1,0 +1,8 @@
+{
+  "type": "commonjs",
+  "dependencies": {
+    "@types/google-apps-script": "^1.0.99",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
