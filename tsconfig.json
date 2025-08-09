@@ -4,7 +4,8 @@
     "module": "CommonJS",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "rootDirs": ["src", "tests"]
   },
   "ts-node": {
     "transpileOnly": true

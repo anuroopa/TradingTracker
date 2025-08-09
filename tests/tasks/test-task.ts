@@ -1,5 +1,4 @@
-import { ITask } from './task-interface';
-
+import { ITask } from '../../src/tasks/task-interface';
 
 export class TestTask implements ITask {
     private frequency : number = 0;
@@ -27,8 +26,6 @@ export class TestTask implements ITask {
     }
 
     run() : boolean {
-    
         return true;
     }
-
 }
