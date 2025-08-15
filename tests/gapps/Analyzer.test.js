@@ -45,8 +45,9 @@ describe('extractExpiryDate', () => {
 
 describe('parseExpiryDate', () => {
   test.each([
-    ['2025-08-15', 2025, 8, 15],
-    ["'2025-08-15'", 2025, 8, 15],
+    ["Aug 15 '25", 2025, 8, 15],
+    ["Sep 19 '25", 2025, 9, 19],
+    ["Sep 26 '25 w (Weekly)", 2025, 9, 26],
     ['not-a-date', '', '', ''],
     ['', '', '', ''],
     [null, '', '', ''],
@@ -60,5 +61,67 @@ describe('parseExpiryDate', () => {
     } else {
       expect(result).toBe('');
     }
+  });
+});
+
+describe('filterAndMarkRows', () => {
+  test('basic extraction and marking', () => {
+    const data = [
+      ["BITFARMS LTD COM BITF: NSDQ"],
+      ["Real Time Equity Quote: August 15, 2025 01:15:49 PM ET"],
+      ["Last Price1.28"],
+      ["Today's Change+0.01 (+1.18%)"],
+      ["Volume12,705,474"],
+      ["Bid1.28(66,000)"],
+      ["Ask1.29(134,600)"],
+      ["Aug 15 '25"],
+      ["CALLS", "Aug 15 '25"],
+      ["Open Interest"],
+      ["100", 1, 2],
+      ["remove me"],
+    ];
+    const startRow = 5;
+    const result = filterAndMarkRows(data, startRow);
+    expect(result.instrument).toBe("BITFARMS LTD COM BITF: NSDQ");
+    expect(result.ticker).toBe("BITF");
+    expect(result.lastPrice).toBe(1.28);
+    expect(result.expiryDateStr).toBe("Aug 15 '25");
+    expect(result.expiryDateObj instanceof Date).toBe(true);
+    expect(result.expiryDateObj.getFullYear()).toBe(2025);
+    expect(result.expiryDateObj.getMonth()).toBe(7); // August
+    expect(result.expiryDateObj.getDate()).toBe(15);
+    expect(result.openInterestRowIndex).toBe(9);
+    // rowsToDelete: Last Price, CALLS, and all non-header, non-numeric rows
+    expect(result.rowsToDelete).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 16]);
+  });
+
+  test('no last price or expiry', () => {
+    const data = [
+      ['AAPL'],
+      ['Open Interest'],
+      ['100', 1, 2],
+    ];
+    const startRow = 0;
+    const result = filterAndMarkRows(data, startRow);
+    expect(result.lastPrice).toBe("");
+    expect(result.expiryDateStr).toBe("");
+    expect(result.expiryDateObj).toBe("");
+    expect(result.openInterestRowIndex).toBe(1);
+    expect(result.rowsToDelete).toEqual([]);
+  });
+
+  test('removes non-numeric, non-header rows', () => {
+    const data = [
+      ['AAPL'],
+      ['foo'],
+      ['Open Interest'],
+      ['bar'],
+      ['baz', ''],
+      ['100', 1, 2],
+    ];
+    const startRow = 10;
+    const result = filterAndMarkRows(data, startRow);
+    // Only rows 1, 3, 4 should be deleted (non-header, non-numeric)
+    expect(result.rowsToDelete).toEqual([11, 13, 14]);
   });
 });

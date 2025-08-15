@@ -5,23 +5,22 @@ function analyzeOptions() {
 
   const startRow = range.getRow();
   const startCol = range.getColumn();
-  const numCols = data[0].length;
-
-  let lastPrice = "";
-  let expiryDateStr = "";
-  let expiryDateObj = "";
-  let openInterestRowIndex = -1;
-  const rowsToDelete = [];
 
   // Step 1: Process ticker, price, expiry rows. Mark unnecessary rows for removal
-  ({ lastPrice, expiryDateStr, expiryDateObj, openInterestRowIndex } = filterAndMarkRows(data, lastPrice, rowsToDelete, startRow, expiryDateStr, expiryDateObj, openInterestRowIndex));
+  ({ instrument, ticker, lastPrice, expiryDateStr, expiryDateObj, openInterestRowIndex, rowsToDelete } =
+    filterAndMarkRows(data, startRow));
 
-  if (openInterestRowIndex === -1) {
-    throw new Error("Open Interest row not found in selected range.");
-  }
+  // Inject header info into first row
+  const headerRow = [instrument, ticker, lastPrice, expiryDateStr, expiryDateObj];
+  sheet.getRange(startRow, startCol, 1, headerRow.length).setValues([headerRow]);
+  // Insert formula for days to expiry
+  const expiryDateCell = sheet.getRange(startRow, startCol + 4).getA1Notation();
+  const formula = `=${expiryDateCell}-TODAY()`;
+  sheet.getRange(startRow, startCol + 5).setFormula(formula);
 
   const tableStartRow = startRow + openInterestRowIndex;
   const tableNumRows = data.length - openInterestRowIndex;
+  const numCols = data[0].length;
 
   for (let i = 0; i < tableNumRows; i++) {
     const rowIndex = tableStartRow + i;
@@ -67,7 +66,15 @@ function analyzeOptions() {
 }
 
 // Helpers
-function filterAndMarkRows(data, lastPrice, rowsToDelete, startRow, expiryDateStr, expiryDateObj, openInterestRowIndex) {
+function filterAndMarkRows(data, startRow) {
+  let instrument = "";
+  let ticker = "";
+  let lastPrice = "";
+  let expiryDateStr = "";
+  let expiryDateObj = "";
+  let openInterestRowIndex = -1;
+  const rowsToDelete = [];
+
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const rowText = row.join(" ").toLowerCase();
@@ -76,6 +83,11 @@ function filterAndMarkRows(data, lastPrice, rowsToDelete, startRow, expiryDateSt
     const isCallsHeader = rowText.startsWith("calls");
     const isOpenInterestHeader = rowText.startsWith("open interest");
     const hasNumeric = row.some(cell => typeof cell === 'number' && !isNaN(cell));
+
+    if (isInstrumentLine) {
+      instrument = row[0];
+      ticker = extractTicker(instrument);
+    }
 
     if (isLastPriceRow) {
       lastPrice = extractLastPrice(row);
@@ -100,7 +112,7 @@ function filterAndMarkRows(data, lastPrice, rowsToDelete, startRow, expiryDateSt
       rowsToDelete.push(startRow + i);
     }
   }
-  return { lastPrice, expiryDateStr, expiryDateObj, openInterestRowIndex };
+  return { instrument, ticker, lastPrice, expiryDateStr, expiryDateObj, openInterestRowIndex, rowsToDelete };
 }
 
 function extractTicker(instrumentLine) {
@@ -136,10 +148,15 @@ function extractExpiryDate(row) {
 
 function parseExpiryDate(expiryStr) {
   if (!expiryStr) return "";
-  const cleaned = expiryStr.replace(/'/g, "");
-  // Parse as local time to avoid timezone issues
-  const parsed = new Date(cleaned + 'T00:00:00');
-  return isNaN(parsed.getTime()) ? "" : parsed;
+  let cleaned = expiryStr.trim();
+  // Split, slice first 3 words, replace leading ' in last word with 20, join, then parse
+  let parts = cleaned.split(/\s+/).slice(0, 3);
+  if (parts.length === 3) {
+    parts[2] = parts[2].replace(/^'/, '20');
+    parsed = new Date(parts.join(' '));
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  return "";
 }
 
 function isNumeric(val) {
