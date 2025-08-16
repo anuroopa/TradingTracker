@@ -40,6 +40,10 @@ function analyzeOptions() {
     if (isHeader) {
       sheet.getRange(rowIndex, startCol, 1, 2).setValues([["ARR", "Sell C BE"]]);
       sheet.getRange(rowIndex, rightInsertStart, 1, 2).setValues([["Sell P BE", "ARR"]]);
+      copyCellFormat(sheet, rowIndex, dataStartCol, rowIndex, startCol);
+      copyCellFormat(sheet, rowIndex, dataStartCol, rowIndex, startCol + 1);
+      copyCellFormat(sheet, rowIndex, dataStartCol, rowIndex, rightInsertStart);
+      copyCellFormat(sheet, rowIndex, dataStartCol, rowIndex, rightInsertStart + 1);
     } else {
       const row = data[openInterestRowIndex + i];
       Logger.log(`Processing row ${rowIndex} ${row}`);
@@ -49,27 +53,11 @@ function analyzeOptions() {
       // Logger.log(`Processing row ${rowIndex}: Strike = ${strike} Call Bid = ${callBid}, Put Bid = ${putBid}`);
       const sellCBE = isNumeric(strike) && isNumeric(callBid) ? strike - callBid : "";
       const sellPBE = isNumeric(strike) && isNumeric(putBid) ? strike - putBid : "";
-
       const minInvestment = Math.min(lastPrice, strike);
-
-      setArrCell(sheet, rowIndex, startCol + 0, getAnnualizedReturn(minInvestment, callBid, daysToExpiry));
-      setBeCell(sheet, rowIndex, startCol + 1, sellCBE);
-      setBeCell(sheet, rowIndex, rightInsertStart + 0, sellPBE);
-      setArrCell(sheet, rowIndex, rightInsertStart + 1, getAnnualizedReturn(strike, putBid, daysToExpiry));
-      // Helper to set and format BE cell as 2 decimals
-      function setBeCell(sheet, row, col, value) {
-        const cell = sheet.getRange(row, col);
-        cell.setValue(value);
-        cell.setNumberFormat('0.00');
-      }
-      // Helper to set and format ARR cell as percent
-      function setArrCell(sheet, row, col, value) {
-        Logger.log(`Setting ARR cell at (${row}, ${col}) to value: ${value}`);
-        const cell = sheet.getRange(row, col);
-        cell.setValue(value);
-        cell.setNumberFormat('0.00%');
-      }
-
+      setArrCell(sheet, rowIndex, startCol + 0, getAnnualizedReturn(minInvestment, callBid, daysToExpiry), dataStartCol + 3);
+      setBeCell(sheet, rowIndex, startCol + 1, sellCBE, dataStartCol + 3);
+      setBeCell(sheet, rowIndex, rightInsertStart + 0, sellPBE, dataStartCol + 11);
+      setArrCell(sheet, rowIndex, rightInsertStart + 1, getAnnualizedReturn(strike, putBid, daysToExpiry), dataStartCol + 11);
     }
   }
 
@@ -82,6 +70,37 @@ function analyzeOptions() {
 }
 
 // Helpers
+function copyCellFormat(sheet, fromRow, fromCol, toRow, toCol) {
+  const toCell = sheet.getRange(toRow, toCol);
+  copyCellFormatToCell(sheet, fromRow, fromCol, toCell);
+}
+
+// copy format from one cell to another
+function copyCellFormatToCell(sheet, fromRow, fromCol, toCell) {
+  const fromCell = sheet.getRange(fromRow, fromCol);
+  fromCell.copyTo(toCell, { formatOnly: true });
+}
+
+// Helper to set and format BE cell as 2 decimals
+function setBeCell(sheet, row, col, value, copyCellFormat) {
+  const cell = sheet.getRange(row, col);
+  cell.setValue(value);
+  copyCellFormatToCell(sheet, row, copyCellFormat, cell);
+  cell.setNumberFormat('0.00');
+  return cell;
+}
+
+// Helper to set and format ARR cell as percent
+function setArrCell(sheet, row, col, value, copyCellFormat) {
+  Logger.log(`Setting ARR cell at (${row}, ${col}) to value: ${value}`);
+  const cell = sheet.getRange(row, col);
+  cell.setValue(value);
+  copyCellFormatToCell(sheet, row, copyCellFormat, cell);
+  cell.setNumberFormat('0.00%');
+  return cell;
+}
+
+
 function filterAndMarkRows(data, startRow) {
   let instrument = "";
   let ticker = "";
@@ -179,10 +198,10 @@ function parseExpiryDate(expiryStr) {
 function getDaysToExpiry(expiryDate) {
   if (!(expiryDate instanceof Date) || isNaN(expiryDate.getTime())) return "";
   const today = new Date();
-  // Zero out the time for both dates
   today.setHours(0, 0, 0, 0);
   const exp = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
-  return exp - today;
+  const diffMs = exp - today;
+  return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
 function getAnnualizedReturn(investment, gain, days) {
