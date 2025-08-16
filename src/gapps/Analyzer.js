@@ -13,9 +13,15 @@ function analyzeOptions() {
   // Inject header info into first row
   const headerRow = [instrument, ticker, lastPrice, expiryDateStr, expiryDateObj];
   sheet.getRange(startRow, startCol, 1, headerRow.length).setValues([headerRow]);
-  // Insert formula for days to expiry
-  const daysToExpiry = getDaysToExpiry(expiryDateObj);
-  sheet.getRange(startRow, startCol + 5).setValue(daysToExpiry);
+  // Insert formula for today in startCol+5
+  sheet.getRange(startRow, startCol + 5).setFormula('=TODAY()');
+  const daysCol = startCol + 6;
+  // Insert formula for days to expiry in startCol+6 (expiry date - today)
+  sheet.getRange(startRow, daysCol).setFormula(`=${sheet.getRange(startRow, startCol + 4).getA1Notation()} - ${sheet.getRange(startRow, startCol + 5).getA1Notation()}`);
+  const daysCell = sheet.getRange(startRow, daysCol).getA1Notation();
+
+  // const daysToExpiry = getDaysToExpiry(expiryDateObj);
+  // sheet.getRange(startRow, startCol + 5).setValue(daysToExpiry);
 
   const tableStartRow = startRow + openInterestRowIndex;
   const tableNumRows = data.length - openInterestRowIndex;
@@ -47,17 +53,29 @@ function analyzeOptions() {
     } else {
       const row = data[openInterestRowIndex + i];
       Logger.log(`Processing row ${rowIndex} ${row}`);
-      const strike = row[7];
-      const callBid = row[3];
-      const putBid = row[9];
-      // Logger.log(`Processing row ${rowIndex}: Strike = ${strike} Call Bid = ${callBid}, Put Bid = ${putBid}`);
-      const sellCBE = isNumeric(strike) && isNumeric(callBid) ? strike - callBid : "";
-      const sellPBE = isNumeric(strike) && isNumeric(putBid) ? strike - putBid : "";
-      const minInvestment = Math.min(lastPrice, strike);
-      setArrCell(sheet, rowIndex, startCol + 0, getAnnualizedReturn(minInvestment, callBid, daysToExpiry), dataStartCol + 3);
-      setBeCell(sheet, rowIndex, startCol + 1, sellCBE, dataStartCol + 3);
-      setBeCell(sheet, rowIndex, rightInsertStart + 0, sellPBE, dataStartCol + 11);
-      setArrCell(sheet, rowIndex, rightInsertStart + 1, getAnnualizedReturn(strike, putBid, daysToExpiry), dataStartCol + 11);
+      // Calculate cell references for formulas
+      const strikeCol = dataStartCol + 7;
+      const callBidCol = dataStartCol + 3;
+      const putBidCol = dataStartCol + 9;
+      const lastPriceCol = dataStartCol + 2; // assuming lastPrice is in col 2 after left insert
+
+      const strikeCell = sheet.getRange(rowIndex, strikeCol).getA1Notation();
+      const callBidCell = sheet.getRange(rowIndex, callBidCol).getA1Notation();
+      const putBidCell = sheet.getRange(rowIndex, putBidCol).getA1Notation();
+      const lastPriceCell = sheet.getRange(rowIndex, lastPriceCol).getA1Notation();
+
+      // ARR Call: use min(lastPrice, strike) as investment
+      const arrCallFormula = `=ANNUALIZED_RETURN(MIN(${lastPriceCell},${strikeCell}),${callBidCell},${daysCell})`;
+      setArrCell(sheet, rowIndex, startCol + 0, arrCallFormula, dataStartCol + 3);
+      // Sell C BE
+      const sellCBEFormula = `=BREAK_EVEN(${strikeCell},${callBidCell})`;
+      setBeCell(sheet, rowIndex, startCol + 1, sellCBEFormula, dataStartCol + 3);
+      // Sell P BE
+      const sellPBEFormula = `=BREAK_EVEN(${strikeCell},${putBidCell})`;
+      setBeCell(sheet, rowIndex, rightInsertStart + 0, sellPBEFormula, dataStartCol + 11);
+      // ARR Put
+      const arrPutFormula = `=ANNUALIZED_RETURN(${strikeCell},${putBidCell},${daysCell})`;
+      setArrCell(sheet, rowIndex, rightInsertStart + 1, arrPutFormula, dataStartCol + 11);
     }
   }
 
@@ -67,6 +85,23 @@ function analyzeOptions() {
   }
 
   SpreadsheetApp.flush();
+}
+
+// Pure custom function for annualized return usable in Google Sheets formulas
+function ANNUALIZED_RETURN(investment, gain, days) {
+  if (typeof investment !== 'number' || typeof gain !== 'number' || typeof days !== 'number' || investment === 0 || days <= 0) {
+    return '';
+  }
+  var totalReturn = gain / investment;
+  return Math.pow(1 + totalReturn, 365 / days) - 1;
+}
+
+// Pure custom function for break-even (BE) usable in Google Sheets formulas
+function BREAK_EVEN(strike, bid) {
+  if (typeof strike !== 'number' || typeof bid !== 'number') {
+    return '';
+  }
+  return strike - bid;
 }
 
 // Helpers
@@ -84,7 +119,11 @@ function copyCellFormatToCell(sheet, fromRow, fromCol, toCell) {
 // Helper to set and format BE cell as 2 decimals
 function setBeCell(sheet, row, col, value, copyCellFormat) {
   const cell = sheet.getRange(row, col);
-  cell.setValue(value);
+  if (typeof value === 'string' && value.startsWith('=')) {
+    cell.setFormula(value);
+  } else {
+    cell.setValue(value);
+  }
   copyCellFormatToCell(sheet, row, copyCellFormat, cell);
   cell.setNumberFormat('0.00');
   return cell;
@@ -94,7 +133,11 @@ function setBeCell(sheet, row, col, value, copyCellFormat) {
 function setArrCell(sheet, row, col, value, copyCellFormat) {
   Logger.log(`Setting ARR cell at (${row}, ${col}) to value: ${value}`);
   const cell = sheet.getRange(row, col);
-  cell.setValue(value);
+  if (typeof value === 'string' && value.startsWith('=')) {
+    cell.setFormula(value);
+  } else {
+    cell.setValue(value);
+  }
   copyCellFormatToCell(sheet, row, copyCellFormat, cell);
   cell.setNumberFormat('0.00%');
   return cell;
