@@ -13,6 +13,10 @@ function analyzeOptions() {
   // Inject header info into first row
   const headerRow = [instrument, ticker, lastPrice, expiryDateStr, expiryDateObj];
   sheet.getRange(startRow, startCol, 1, headerRow.length).setValues([headerRow]);
+
+  const lastPriceCol = startCol + 2; // assuming lastPrice is in startcol + 2 in headerRow
+  const lastPriceCell = sheet.getRange(startRow, lastPriceCol).getA1Notation();
+
   // Insert formula for today in startCol+5
   sheet.getRange(startRow, startCol + 5).setFormula('=TODAY()');
   const daysCol = startCol + 6;
@@ -23,7 +27,12 @@ function analyzeOptions() {
   // const daysToExpiry = getDaysToExpiry(expiryDateObj);
   // sheet.getRange(startRow, startCol + 5).setValue(daysToExpiry);
 
-  const tableStartRow = startRow + openInterestRowIndex;
+  // Step 2: Delete rows from bottom to top
+  for (let i = rowsToDelete.length - 1; i >= 0; i--) {
+    sheet.deleteRow(rowsToDelete[i]);
+  }
+
+  const tableStartRow = startRow + openInterestRowIndex - rowsToDelete.length;
   const tableNumRows = data.length - openInterestRowIndex;
   const numCols = data[openInterestRowIndex].length;
 
@@ -57,12 +66,10 @@ function analyzeOptions() {
       const strikeCol = dataStartCol + 7;
       const callBidCol = dataStartCol + 3;
       const putBidCol = dataStartCol + 9;
-      const lastPriceCol = dataStartCol + 2; // assuming lastPrice is in col 2 after left insert
 
       const strikeCell = sheet.getRange(rowIndex, strikeCol).getA1Notation();
       const callBidCell = sheet.getRange(rowIndex, callBidCol).getA1Notation();
       const putBidCell = sheet.getRange(rowIndex, putBidCol).getA1Notation();
-      const lastPriceCell = sheet.getRange(rowIndex, lastPriceCol).getA1Notation();
 
       // ARR Call: use min(lastPrice, strike) as investment
       const arrCallFormula = `=ANNUALIZED_RETURN(MIN(${lastPriceCell},${strikeCell}),${callBidCell},${daysCell})`;
@@ -77,11 +84,6 @@ function analyzeOptions() {
       const arrPutFormula = `=ANNUALIZED_RETURN(${strikeCell},${putBidCell},${daysCell})`;
       setArrCell(sheet, rowIndex, rightInsertStart + 1, arrPutFormula, dataStartCol + 11);
     }
-  }
-
-  // Delete rows from bottom to top
-  for (let i = rowsToDelete.length - 1; i >= 0; i--) {
-    sheet.deleteRow(rowsToDelete[i]);
   }
 
   SpreadsheetApp.flush();
