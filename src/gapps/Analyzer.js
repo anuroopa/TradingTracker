@@ -64,22 +64,22 @@ function analyzeOptions() {
       Logger.log(`Processing row ${rowIndex} ${row}`);
       // Calculate cell references for formulas
       const strikeCol = dataStartCol + 7;
-      const callBidCol = dataStartCol + 3;
+      const callBidCol = dataStartCol + 4;
       const putBidCol = dataStartCol + 9;
 
       const strikeCell = sheet.getRange(rowIndex, strikeCol).getA1Notation();
       const callBidCell = sheet.getRange(rowIndex, callBidCol).getA1Notation();
       const putBidCell = sheet.getRange(rowIndex, putBidCol).getA1Notation();
 
-      // ARR Call: use min(lastPrice, strike) as investment
-      const arrCallFormula = `=ANNUALIZED_RETURN(MIN(${lastPriceCell},${strikeCell}),${callBidCell},${daysCell})`;
-      setArrCell(sheet, rowIndex, startCol + 0, arrCallFormula, dataStartCol + 3);
       // Sell C BE
       const sellCBEFormula = `=BREAK_EVEN(${strikeCell},${callBidCell})`;
       setBeCell(sheet, rowIndex, startCol + 1, sellCBEFormula, dataStartCol + 3);
       // Sell P BE
       const sellPBEFormula = `=BREAK_EVEN(${strikeCell},${putBidCell})`;
       setBeCell(sheet, rowIndex, rightInsertStart + 0, sellPBEFormula, dataStartCol + 11);
+      // ARR Call: use min(lastPrice, strike) as investment
+      const arrCallFormula = `=ANNUALIZED_RETURN(${lastPriceCell},${callBidCell},${daysCell})`;
+      setArrCell(sheet, rowIndex, startCol + 0, arrCallFormula, dataStartCol + 3);
       // ARR Put
       const arrPutFormula = `=ANNUALIZED_RETURN(${strikeCell},${putBidCell},${daysCell})`;
       setArrCell(sheet, rowIndex, rightInsertStart + 1, arrPutFormula, dataStartCol + 11);
