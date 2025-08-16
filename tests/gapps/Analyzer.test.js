@@ -54,6 +54,7 @@ describe('parseExpiryDate', () => {
   ])('parseExpiryDate(%j) -> %j-%j-%j', (input, year, month, date) => {
     const result = parseExpiryDate(input);
     if (year !== '') {
+      console.log('parseExpiryDate result type:', typeof result, 'value:', result);
       expect(result instanceof Date).toBe(true);
       expect(result.getFullYear()).toBe(year);
       expect(result.getMonth()).toBe(month-1); // 0-based
@@ -61,6 +62,21 @@ describe('parseExpiryDate', () => {
     } else {
       expect(result).toBe('');
     }
+  });
+});
+
+describe('getDaysToExpiry', () => {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  test.each([
+    [new Date(today.getFullYear(), today.getMonth(), today.getDate() + 10), 10],
+    [today, 0],
+    [new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5), -5],
+    ['not-a-date', ""],
+    [null, ""],
+    [new Date('invalid'), ""]
+  ])('getDaysToExpiry(%j) -> %j', (input, expected) => {
+    expect(getDaysToExpiry(input)).toBe(expected);
   });
 });
 
@@ -123,5 +139,37 @@ describe('filterAndMarkRows', () => {
     const result = filterAndMarkRows(data, startRow);
     // Only rows 1, 3, 4 should be deleted (non-header, non-numeric)
     expect(result.rowsToDelete).toEqual([11, 13, 14]);
+  });
+});
+
+describe('getAnnualizedReturn', () => {
+  test.each([
+    // investment, gain, days, expected (rounded to 6 decimals)
+    [1000, 100, 365, 0.1],
+    [1000, 200, 365, 0.2],
+    [1000, 100, 30, Math.pow(1 + 0.1, 365 / 30) - 1],
+    [500, 50, 180, Math.pow(1 + 0.1, 365 / 180) - 1],
+    [1000, 0, 365, 0],
+    [1000, -100, 365, -0.1],
+    [1000, 100, 0, ""],
+    [0, 100, 365, ""],
+    [1000, 100, -10, ""],
+    [null, 100, 365, ""],
+    [1000, null, 365, ""],
+    [1000, 100, null, ""],
+    [NaN, 100, 365, ""],
+    [1000, NaN, 365, ""],
+    [1000, 100, NaN, ""],
+    ["1000", 100, 365, ""],
+    [1000, "100", 365, ""],
+    [1000, 100, "365", ""],
+  ])('annualizedReturn(%j, %j, %j) -> %j', (investment, gain, days, expected) => {
+    const result = getAnnualizedReturn(investment, gain, days);
+    if (expected === "") {
+      expect(result).toBe("");
+    } else {
+      expect(typeof result).toBe("number");
+      expect(result).toBeCloseTo(expected, 6);
+    }
   });
 });

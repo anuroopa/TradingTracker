@@ -14,46 +14,62 @@ function analyzeOptions() {
   const headerRow = [instrument, ticker, lastPrice, expiryDateStr, expiryDateObj];
   sheet.getRange(startRow, startCol, 1, headerRow.length).setValues([headerRow]);
   // Insert formula for days to expiry
-  const expiryDateCell = sheet.getRange(startRow, startCol + 4).getA1Notation();
-  const formula = `=${expiryDateCell}-TODAY()`;
-  sheet.getRange(startRow, startCol + 5).setFormula(formula);
+  const daysToExpiry = getDaysToExpiry(expiryDateObj);
+  sheet.getRange(startRow, startCol + 5).setValue(daysToExpiry);
 
   const tableStartRow = startRow + openInterestRowIndex;
   const tableNumRows = data.length - openInterestRowIndex;
-  const numCols = data[0].length;
+  const numCols = data[openInterestRowIndex].length;
+
+  // Step 3: Insert 2 cells to the left
+  const leftInsertRange = sheet.getRange(tableStartRow, startCol, tableNumRows, 1);
+  leftInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
+  leftInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
+
+  // Step 4: Insert 2 cells to the right
+  const dataStartCol = startCol + 2; // after left insert
+  const rightInsertStart = dataStartCol + numCols;
+  const rightInsertRange = sheet.getRange(tableStartRow, rightInsertStart, tableNumRows, 1);
+  rightInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
+  rightInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
 
   for (let i = 0; i < tableNumRows; i++) {
     const rowIndex = tableStartRow + i;
-
-    // Step 3: Insert 2 cells to the left
-    const leftInsertRange = sheet.getRange(rowIndex, startCol, 1, 1);
-    leftInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
-    sheet.getRange(rowIndex, startCol, 1, 1).insertCells(SpreadsheetApp.Dimension.COLUMNS);
-
-    // Step 3: Insert 2 cells to the right
-    const rightInsertStart = startCol + numCols + 2; // after left insert
-    const rightInsertRange = sheet.getRange(rowIndex, rightInsertStart, 1, 1);
-    rightInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
-    sheet.getRange(rowIndex, rightInsertStart, 1, 1).insertCells(SpreadsheetApp.Dimension.COLUMNS);
-
     // Step 4: Write values
     const isHeader = i === 0;
     if (isHeader) {
       sheet.getRange(rowIndex, startCol, 1, 2).setValues([["ARR", "Sell C BE"]]);
       sheet.getRange(rowIndex, rightInsertStart, 1, 2).setValues([["Sell P BE", "ARR"]]);
     } else {
-      const row = sheet.getRange(rowIndex, startCol + 2, 1, numCols).getValues()[0];
-      const strike = parseFloat(row[7]);     // 8th column (index 7)
-      const callBid = parseFloat(row[3]);    // 4th column (index 3)
-      const putBid = parseFloat(row[9]);     // 10th column (index 9)
-
+      const row = data[openInterestRowIndex + i];
+      Logger.log(`Processing row ${rowIndex} ${row}`);
+      const strike = row[7];
+      const callBid = row[3];
+      const putBid = row[9];
+      // Logger.log(`Processing row ${rowIndex}: Strike = ${strike} Call Bid = ${callBid}, Put Bid = ${putBid}`);
       const sellCBE = isNumeric(strike) && isNumeric(callBid) ? strike - callBid : "";
       const sellPBE = isNumeric(strike) && isNumeric(putBid) ? strike - putBid : "";
 
-      sheet.getRange(rowIndex, startCol + 0).setValue("");         // ARR left
-      sheet.getRange(rowIndex, startCol + 1).setValue(sellCBE);    // Sell C BE
-      sheet.getRange(rowIndex, rightInsertStart + 0).setValue(sellPBE); // Sell P BE
-      sheet.getRange(rowIndex, rightInsertStart + 1).setValue("");     // ARR right
+      const minInvestment = Math.min(lastPrice, strike);
+
+      setArrCell(sheet, rowIndex, startCol + 0, getAnnualizedReturn(minInvestment, callBid, daysToExpiry));
+      setBeCell(sheet, rowIndex, startCol + 1, sellCBE);
+      setBeCell(sheet, rowIndex, rightInsertStart + 0, sellPBE);
+      setArrCell(sheet, rowIndex, rightInsertStart + 1, getAnnualizedReturn(strike, putBid, daysToExpiry));
+      // Helper to set and format BE cell as 2 decimals
+      function setBeCell(sheet, row, col, value) {
+        const cell = sheet.getRange(row, col);
+        cell.setValue(value);
+        cell.setNumberFormat('0.00');
+      }
+      // Helper to set and format ARR cell as percent
+      function setArrCell(sheet, row, col, value) {
+        Logger.log(`Setting ARR cell at (${row}, ${col}) to value: ${value}`);
+        const cell = sheet.getRange(row, col);
+        cell.setValue(value);
+        cell.setNumberFormat('0.00%');
+      }
+
     }
   }
 
@@ -157,6 +173,25 @@ function parseExpiryDate(expiryStr) {
     if (!isNaN(parsed.getTime())) return parsed;
   }
   return "";
+}
+
+// Returns the number of days between expiryDate (Date object) and today (local time)
+function getDaysToExpiry(expiryDate) {
+  if (!(expiryDate instanceof Date) || isNaN(expiryDate.getTime())) return "";
+  const today = new Date();
+  // Zero out the time for both dates
+  today.setHours(0, 0, 0, 0);
+  const exp = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
+  return exp - today;
+}
+
+function getAnnualizedReturn(investment, gain, days) {
+  if (!isNumeric(investment) || !isNumeric(gain) || !isNumeric(days) || investment === 0 || days <= 0) {
+    return "";
+  }
+  const totalReturn = gain / investment;
+  const annualized = Math.pow(1 + totalReturn, 365 / days) - 1;
+  return annualized;
 }
 
 function isNumeric(val) {
