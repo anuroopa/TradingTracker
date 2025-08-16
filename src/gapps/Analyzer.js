@@ -27,26 +27,36 @@ function analyzeOptions() {
   // const daysToExpiry = getDaysToExpiry(expiryDateObj);
   // sheet.getRange(startRow, startCol + 5).setValue(daysToExpiry);
 
+  const numCols = data[openInterestRowIndex].length;
+
   // Step 2: Delete rows from bottom to top
   for (let i = rowsToDelete.length - 1; i >= 0; i--) {
-    sheet.deleteRow(rowsToDelete[i]);
+    sheet.getRange(rowsToDelete[i], startCol, 1, numCols).deleteCells(SpreadsheetApp.Dimension.ROWS);
   }
 
   const tableStartRow = startRow + openInterestRowIndex - rowsToDelete.length;
   const tableNumRows = data.length - openInterestRowIndex;
-  const numCols = data[openInterestRowIndex].length;
 
+  // Ensure there are enough columns to the right before inserting cells
+  const dataStartCol = startCol + 2; // after left insert
+  const rightInsertStart = dataStartCol + numCols; // existing columns after left insert
+  const totalNeededCols = rightInsertStart + 2 - 1; // 2 columns to insert, 1-based index
+  const currentMaxCols = sheet.getMaxColumns();
+  if (currentMaxCols < totalNeededCols) {
+    sheet.insertColumnsAfter(currentMaxCols, totalNeededCols - currentMaxCols);
+  }
+  
   // Step 3: Insert 2 cells to the left
   const leftInsertRange = sheet.getRange(tableStartRow, startCol, tableNumRows, 1);
   leftInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
   leftInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
 
   // Step 4: Insert 2 cells to the right
-  const dataStartCol = startCol + 2; // after left insert
-  const rightInsertStart = dataStartCol + numCols;
   const rightInsertRange = sheet.getRange(tableStartRow, rightInsertStart, tableNumRows, 1);
   rightInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
   rightInsertRange.insertCells(SpreadsheetApp.Dimension.COLUMNS);
+
+  sheet.getRange(tableStartRow, startCol, 1, headerRow.length+4).setWrap(true);
 
   for (let i = 0; i < tableNumRows; i++) {
     const rowIndex = tableStartRow + i;
